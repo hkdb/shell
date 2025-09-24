@@ -33,6 +33,9 @@ import type { Launcher } from './launcher.js';
 
 import { Fork } from './fork.js';
 
+// Gnome 49
+import Mtk from 'gi://Mtk';
+
 const display = global.display;
 const wim = global.window_manager;
 const wom = global.workspace_manager;
@@ -325,6 +328,11 @@ export class Ext extends Ecs.System<ExtEvent> {
 
                     actor.remove_all_transitions();
                     const { x, y, width, height } = movement;
+                    
+                    // DEBUG: Log movement restoration for stack debugging
+                    if (window.stack !== null) {
+                        log.debug(`DEBUG STACK RESTORE: Restoring stacked window ${window.entity} to: ${x}, ${y}, ${width}x${height}`);
+                    }
 
                     window.meta.move_resize_frame(true, x, y, width, height);
                     window.meta.move_frame(true, x, y);
@@ -901,11 +909,11 @@ export class Ext extends Ecs.System<ExtEvent> {
                 prev.workspace_id() === win.workspace_id()
             ) {
                 if (prev.rect().contains(win.rect())) {
-                    if (prev.is_maximized()) {
-                        prev.meta.unmaximize(Meta.MaximizeFlags.BOTH);
-                    }
+                  if (prev.is_maximized()) {
+                    prev.meta.unmaximize();
+                  }  
                 } else if (prev.stack) {
-                    prev.meta.unmaximize(Meta.MaximizeFlags.BOTH);
+                    prev.meta.unmaximize();
                     this.auto_tiler.forest.stacks.get(prev.stack)?.restack();
                 }
             }
@@ -1027,7 +1035,7 @@ export class Ext extends Ecs.System<ExtEvent> {
                     compare.is_maximized() &&
                     win.entity[0] !== compare.entity[0]
                 ) {
-                    compare.meta.unmaximize(Meta.MaximizeFlags.BOTH);
+                  compare.meta.unmaximize();
                 }
             }
         }
@@ -1251,9 +1259,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
             if (this.auto_tiler) {
                 if (this.is_floating(win)) {
-                    win.meta.unmaximize(Meta.MaximizeFlags.HORIZONTAL);
-                    win.meta.unmaximize(Meta.MaximizeFlags.VERTICAL);
-                    win.meta.unmaximize(Meta.MaximizeFlags.BOTH);
+                  win.meta.unmaximize();
                 }
 
                 this.register(Events.window_move(this, win, rect));
@@ -2623,7 +2629,7 @@ export class Ext extends Ecs.System<ExtEvent> {
 
     cursor_status(): [Rectangle, number] {
         const cursor = cursor_rect();
-        const rect = new Meta.Rectangle({ x: cursor.x, y: cursor.y, width: 1, height: 1 });
+        const rect = new Mtk.Rectangle({ x: cursor.x, y: cursor.y, width: 1, height: 1 });
         const monitor = display.get_monitor_index_for_rect(rect);
         return [cursor, monitor];
     }

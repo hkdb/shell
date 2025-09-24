@@ -113,6 +113,15 @@ export class Forest extends Ecs.World {
                 }
             }
 
+            // DEBUG: Log window movement for stack debugging
+            if (window.stack !== null) {
+                log.debug(`DEBUG STACK MOVE: Moving window ${window.entity} to rect: ${r.rect.x}, ${r.rect.y}, ${r.rect.width}x${r.rect.height}`);
+            }
+
+            if (window.stack !== null) {
+              log.debug(`DEBUG STACK MOVE: Moving window ${window.entity} to rect: ${r.rect.x}, ${r.rect.y}, ${r.rect.width}x${r.rect.height}`);
+            }
+
             move_window(ext, window, r.rect, on_complete);
         }
 

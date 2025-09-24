@@ -276,7 +276,7 @@ export class ShellWindow {
     }
 
     is_maximized(): boolean {
-        return this.meta.get_maximized() !== 0;
+        return this.meta.is_maximized() !== 0;
     }
 
     /**
@@ -289,6 +289,38 @@ export class ShellWindow {
     }
 
     is_single_max_screen(): boolean {
+      // Gnome 49 Fix STARTS
+      const display = this.meta.get_display();
+      if (!display) return false;
+
+      const monitor_count = display.get_n_monitors();
+      if (monitor_count !== 1) return false;
+
+      // If not maximized and not smart-gapped, definitely not single max screen
+      if (!this.is_maximized() && !this.smart_gapped) return false;
+
+      // Check if there are other visible windows on the same workspace
+      const current_workspace = this.meta.get_workspace();
+      if (!current_workspace) return true; // fallback to original behavior
+
+      const visible_windows = current_workspace.list_windows().filter(win => {
+          // Skip self
+          if (win === this.meta) return false;
+
+          // Only count visible, non-minimized windows
+          if (win.minimized) return false;
+
+          // Skip transient/dialog windows that don't take up significant space
+          if (win.get_transient_for()) return false;
+
+          return true;
+      });
+
+      // If there are other visible windows, this isn't a "single max screen" situation
+      return visible_windows.length === 0; 
+      // Gnome 49 Fix END
+
+      /*
         const display = this.meta.get_display();
 
         if (display) {
@@ -297,10 +329,11 @@ export class ShellWindow {
         }
 
         return false;
+        */
     }
 
     is_snap_edge(): boolean {
-        return this.meta.get_maximized() == Meta.MaximizeFlags.VERTICAL;
+        return this.meta.is_maximized() == Meta.MaximizeFlags.VERTICAL;
     }
 
     is_tilable(ext: Ext): boolean {
@@ -372,17 +405,22 @@ export class ShellWindow {
         const actor = meta.get_compositor_private();
 
         if (actor) {
-            meta.unmaximize(Meta.MaximizeFlags.HORIZONTAL);
-            meta.unmaximize(Meta.MaximizeFlags.VERTICAL);
-            meta.unmaximize(Meta.MaximizeFlags.HORIZONTAL | Meta.MaximizeFlags.VERTICAL);
+            meta.unmaximize();
             actor.remove_all_transitions();
 
+            // DEBUG: Log movement cache for stack debugging
+            if (this.stack !== null) {
+                log.debug(`DEBUG STACK CACHE: Caching movement for stacked window ${this.entity}: ${clone.x}, ${clone.y}, ${clone.width}x${clone.height}`);
+            }
             ext.movements.insert(this.entity, clone);
 
             ext.register({ tag: 2, window: this, kind: { tag: 1 } });
             if (on_complete) ext.register_fn(on_complete);
             if (meta.appears_focused) {
                 this.update_border_layout();
+                if (this.stack !== null) {
+                  log.debug(`DEBUG STACK CACHE: Caching movement for stacked window ${this.entity}: ${clone.x}, ${clone.y}, ${clone.width}x${clone.height}`);
+                }
                 ext.show_border_on_focused();
             }
         }
@@ -672,8 +710,8 @@ export class ShellWindow {
     }
 
     private window_changed() {
-        this.update_border_layout();
-        this.ext.show_border_on_focused();
+      this.update_border_layout();
+      this.ext.show_border_on_focused();
     }
 
     private window_raised() {
@@ -684,6 +722,7 @@ export class ShellWindow {
     private workspace_changed() {
         this.restack(RESTACK_STATE.WORKSPACE_CHANGED);
     }
+
 }
 
 /// Activates a window, and moves the mouse point.

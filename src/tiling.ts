@@ -17,6 +17,7 @@ import { AutoTiler } from './auto_tiler.js';
 import { Fork } from './fork.js';
 
 import Meta from 'gi://Meta';
+
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 const { ShellWindow } = window;
 
@@ -542,6 +543,15 @@ export class Tiler {
             if (move_to instanceof ShellWindow) {
                 // Check if we are moving onto a stack, and if so, move into the stack.
                 const stack_info = at.find_stack(move_to.entity);
+                /*
+                if (stack_info) {
+                    const placement = { auto: 0 };
+
+                    focused.ignore_detach = true;
+                    at.detach_window(ext, focused.entity);
+                    at.attach_to_window(ext, move_to, focused, placement, stack_from_left);
+                    watching = focused;
+                */
                 if (stack_info) {
                     const [stack_fork, branch] = stack_info;
                     const stack = branch.inner as NodeStack;
@@ -749,7 +759,7 @@ export class Tiler {
             this.window = win.entity;
 
             if (win.is_maximized()) {
-                win.meta.unmaximize(Meta.MaximizeFlags.BOTH);
+              win.meta.unmaximize();
             }
 
             // Set overlay to match window

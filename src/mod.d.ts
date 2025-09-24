@@ -55,6 +55,9 @@ declare module 'gi://Clutter' {
 }
 
 declare module 'gi://Shell' {
+    interface Shell {
+        version: number;
+    } 
     let Shell: any;
     export default Shell;
 }
@@ -82,6 +85,11 @@ declare module 'gi://GObject' {
 declare module 'gi://Pango' {
     let Pango: any;
     export default Pango;
+}
+
+declare module 'gi://Mtk' {
+    let Mtk: any;
+    export default Mtk;
 }
 
 declare module 'gi://GLib' {
@@ -284,7 +292,8 @@ declare namespace Meta {
         get_display(): Meta.Display | null;
         get_description(): string;
         get_frame_rect(): Rectangular;
-        get_maximized(): number;
+        is_maximized(): number;
+        get_maximized_flags(): number;
         get_monitor(): number;
         get_pid(): number;
         get_role(): null | string;
@@ -310,7 +319,7 @@ declare namespace Meta {
         move_resize_frame(user_op: boolean, x: number, y: number, w: number, h: number): boolean;
         raise(): void;
         skip_taskbar: boolean;
-        unmaximize(flags: any): void;
+        unmaximize(flags?: any): void;
         unminimize(): void;
     }
 
